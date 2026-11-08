@@ -7,32 +7,28 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Temporizador Flip Offline</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" sizes="192x192">
-<meta name="apple-mobile-web-app-title" content="Temporizador">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Three.js CDN (Librería externa necesaria para el fondo 3D) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* ==========================================================================
-   Paleta Granate / Vino personalizada
+   Paleta Granate / Vino & Sistema de Variables Globales
    ========================================================================== */
 :root {
-  --color-bg-primary: #3B141A;
-  --color-surface-card: #522129;
-  --color-accent-gold: #E5A853;
-  --color-accent-saffron: #C9863B;
-  --color-text-primary: #FDF3E7;
-  --color-text-muted: rgba(253, 243, 231, 0.78);
-
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --ease-out: cubic-bezier(.22, 1, .36, 1);
-  --header-h: 64px;
-  --dock-space: calc(104px + env(safe-area-inset-bottom));
-  --stage-gap: 32px;
-  --vh100: 100vh;
-  --display-grow: 0;
-  --display-shrink: 1;
-  --flip-duration: .5s;
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+    --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+    --header-h: 64px;
+    --dock-space: calc(104px + env(safe-area-inset-bottom));
+    --radius-m: 14px;
+    --radius-l: 22px;
+    --stage-gap: 32px;
+    --vh100: 100vh;
+    --display-scale: 1;
+    --display-grow: 0;
+    --display-shrink: 1;
+    --flip-duration: .5s;
+    --u: 1px;
 }
 
 @supports (height: 100svh) {
@@ -40,231 +36,336 @@
 }
 
 body {
-    --bg: var(--color-bg-primary);
-    --surface: var(--color-surface-card);
+    --bg: #3B141A;
+    --surface: #522129;
     --surface-2: #421921;
     --surface-3: #612731;
     --fill: rgba(229, 168, 83, 0.12);
     --fill-strong: rgba(229, 168, 83, 0.22);
     --separator: rgba(201, 134, 59, 0.25);
     --separator-strong: rgba(201, 134, 59, 0.4);
-    --text: var(--color-text-primary);
-    --text-2: var(--color-text-muted);
+    --text: #FDF3E7;
+    --text-2: rgba(253, 243, 231, 0.78);
     --text-3: rgba(253, 243, 231, 0.55);
-    --accent: var(--color-accent-gold);
-    --accent-fill: var(--color-accent-saffron);
+    --accent: #E5A853;
+    --accent-fill: #C9863B;
     --danger: #ff5252;
+    --warning: #ff9800;
     --success: #4caf50;
     --switch-off: rgba(82, 33, 41, 0.7);
-    --btn-primary-bg: var(--color-accent-gold);
+    --btn-primary-bg: #E5A853;
     --btn-primary-hover: #f0be72;
-    --btn-primary-fg: var(--color-bg-primary);
+    --btn-primary-fg: #3B141A;
     --header-bg: rgba(59, 20, 26, 0.85);
     --glass: rgba(82, 33, 41, 0.82);
-    --menu-bg: var(--color-surface-card);
+    --menu-bg: #522129;
     --glass-border: rgba(201, 134, 59, 0.2);
     --sheet-bg: rgba(59, 20, 26, 0.95);
     --sheet-group: rgba(82, 33, 41, 0.7);
     --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(201, 134, 59, 0.15);
-    --flip-card: var(--color-surface-card);
-    --flip-digit: var(--color-text-primary);
-    --flip-fold: var(--color-accent-saffron);
+    --flip-card: #522129;
+    --flip-digit: #FDF3E7;
+    --flip-fold: #C9863B;
     --flip-card-top: #481d24;
     --flip-shade: rgba(0, 0, 0, .45);
     --flip-inner: rgba(253, 243, 231, .06);
     --flip-edge: rgba(201, 134, 59, .3);
     --flip-highlight: rgba(229, 168, 83, .2);
     --flip-shadow: 0 12px 30px rgba(0, 0, 0, .6), 0 4px 8px rgba(0, 0, 0, .4);
+    --flip-meta: #E5A853;
+    --flip-pro-fold: var(--flip-fold);
+    --flip-fold-glint: rgba(253, 243, 231, .15);
+    --flip-fold-shade: rgba(0, 0, 0, .3);
+    --flip-pro-shade: rgba(0, 0, 0, .6);
     color-scheme: dark;
 }
 
-*, *:before, *:after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
-body { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; font-family: var(--font-sans); background: var(--bg); color: var(--text); letter-spacing: -.011em; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; transition: background-color .35s ease, color .35s ease; }
-body.popup-active { overflow: hidden; }
-button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
-button { background: none; border: 0; cursor: pointer; }
-button:disabled { cursor: default; opacity: .4; }
-[hidden] { display: none !important; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.icon { display: inline-block; width: 1em; height: 1em; font-size: 24px; fill: currentColor; flex-shrink: 0; vertical-align: middle; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+*,*:before,*:after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;font-family:var(--font-sans);background:var(--bg);color:var(--text);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+body.popup-active{overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{background:none;border:0;cursor:pointer}
+button:disabled{cursor:default;opacity:.4}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.icon{display:inline-block;width:1em;height:1em;font-size:24px;fill:currentColor;flex-shrink:0;vertical-align:middle}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:focus:not(:focus-visible){outline:none}
 
-.app-container { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; width: 100%; }
-.app-header { position: fixed; inset: 0 0 auto; z-index: 100; height: var(--header-h); padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left)); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--header-bg); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid transparent; }
-.header-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.app-mark { display: grid; place-items: center; flex-shrink: 0; color: var(--accent); }
-.header-brand h1 { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: -.02em; white-space: nowrap; }
-.header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.icon-button { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: var(--text-2); transition: background-color .2s ease, color .2s ease, transform .15s var(--ease-out); }
-.icon-button:active { transform: scale(.92); }
-@media(hover:hover){ .icon-button:hover { color: var(--text); background: var(--fill); } }
-
-main { flex: 1 0 auto; display: flex; flex-direction: column; width: 100%; padding-top: var(--header-h); }
-.page-content-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: calc(100vh - var(--header-h)); min-height: calc(100svh - var(--header-h)); padding: 24px 20px var(--dock-space); }
-.page-container { display: flex; flex-direction: column; align-items: center; gap: var(--stage-gap); width: 100%; text-align: center; }
-
-.btn { display: inline-flex; text-decoration: none; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 26px; border-radius: 999px; font-size: 16px; font-weight: 600; white-space: nowrap; user-select: none; transition: transform .15s var(--ease-out), background-color .2s ease, color .2s ease, opacity .2s ease; }
-.btn .icon { font-size: 22px; }
-.btn:active:not(:disabled) { transform: scale(.96); }
-.btn:disabled { opacity: .32; }
-.btn-primary { min-width: 148px; background: var(--btn-primary-bg); color: var(--btn-primary-fg); }
-.btn-secondary { background: var(--fill); color: var(--text); }
-.btn-lg { height: 56px; padding: 0 32px; font-size: 17px; }
-@media(hover:hover){
-  .btn-primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
-  .btn-secondary:hover:not(:disabled) { background: var(--fill-strong); }
+/* Three.js Background Canvas Container */
+#bg-canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.65;
 }
-.controls { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.controls.equal { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
-.btn-labels { display: inline-grid; }
-.btn-labels > span { grid-area: 1 / 1; visibility: hidden; }
-.btn-labels > span.on { visibility: visible; }
 
-.chip-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--separator-strong); transition: background-color .2s ease, color .2s ease, box-shadow .2s ease, transform .15s var(--ease-out); }
-.chip:active:not(:disabled) { transform: scale(.95); }
-.chip.active { background: var(--accent-fill); color: #fff; box-shadow: none; }
-@media(hover:hover){ .chip:hover:not(:disabled):not(.active) { color: var(--text); background: var(--fill); } }
+/* Layout */
+.app-container{display:flex;flex-direction:column;min-height:100vh;min-height:100svh;width:100%;position:relative;z-index:1}
+.app-header{position:fixed;inset:0 0 auto;z-index:100;height:var(--header-h);padding:0 max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--header-bg);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--separator);transition:border-color .25s ease,background-color .35s ease}
+.header-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.app-mark{display:grid;place-items:center;flex-shrink:0;color:var(--accent);text-decoration:none}
+.app-mark .icon{font-size:26px}
+.header-brand h1{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-.02em;white-space:nowrap}
+.header-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-button{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%;color:var(--text-2);transition:background-color .2s ease,color .2s ease,transform .15s var(--ease-out)}
+.icon-button .icon{font-size:22px}
+.icon-button:active{transform:scale(.92)}
+@media(hover:hover){.icon-button:hover{color:var(--text);background:var(--fill)}}
+.icon-button[aria-expanded=true]{color:var(--text);background:var(--fill)}
 
-.switch { position: relative; display: inline-block; flex-shrink: 0; width: 51px; height: 31px; }
-.switch input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.slider { position: absolute; inset: 0; border-radius: 999px; background: var(--switch-off); transition: background-color .25s ease; }
-.slider:before { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #FDF3E7; box-shadow: 0 3px 8px rgba(0,0,0,0.15); transition: transform .3s var(--ease-out); }
-.switch input:checked + .slider { background: var(--accent); }
-.switch input:checked + .slider:before { transform: translateX(20px); }
+main{flex:1 0 auto;display:flex;flex-direction:column;width:100%;padding-top:var(--header-h)}
+.page-content-wrapper{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:calc(100vh - var(--header-h));min-height:calc(100svh - var(--header-h));padding:24px 20px var(--dock-space)}
+.page-container{display:flex;flex-direction:column;align-items:center;gap:var(--stage-gap);width:100%;text-align:center}
 
-.range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer; --fill-pct: 50%; }
-.range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(var(--accent), var(--accent)) 0 / var(--fill-pct) 100% no-repeat, var(--fill-strong); }
-.range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--fill-strong); }
-.range::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
-.range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -11px; border-radius: 50%; background: #FDF3E7; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+/* Controles */
+.btn{display:inline-flex;text-decoration:none;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 26px;border-radius:999px;font-size:16px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;user-select:none;transition:transform .15s var(--ease-out),background-color .2s ease,color .2s ease,opacity .2s ease,box-shadow .2s ease}
+.btn .icon{font-size:22px}
+.btn:active:not(:disabled){transform:scale(.96)}
+.btn:disabled{opacity:.32}
+.btn-primary{min-width:148px;background:var(--btn-primary-bg);color:var(--btn-primary-fg);box-shadow:0 4px 14px rgba(229,168,83,0.25)}
+.btn-secondary{background:var(--fill);color:var(--text);box-shadow:inset 0 0 0 1px var(--separator-strong)}
+.btn-lg{height:56px;padding:0 32px;font-size:17px}
+@media(hover:hover){
+  .btn-primary:hover:not(:disabled){background:var(--btn-primary-hover);box-shadow:0 6px 20px rgba(229,168,83,0.35)}
+  .btn-secondary:hover:not(:disabled){background:var(--fill-strong)}
+}
+.controls{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:360px}
+.controls.equal{display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+.btn-labels{display:inline-grid}
+.btn-labels>span{grid-area:1 / 1;visibility:hidden}
+.btn-labels>span.on{visibility:visible}
 
-/* Settings Sheet */
-.settings-scrim { position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,0.45); opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility .35s; }
-body.settings-open .settings-scrim { opacity: 1; visibility: visible; }
-.settings-panel { position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 160; display: flex; flex-direction: column; width: 390px; max-width: calc(100vw - 24px); border-radius: 24px; background: var(--sheet-bg); -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); box-shadow: var(--shadow-lg); overflow: hidden; transform: translateX(calc(100% + 24px)); transition: transform .5s var(--ease-out), visibility .5s; visibility: hidden; }
-.settings-panel.open { transform: none; visibility: visible; }
-.settings-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 14px 10px 24px; }
-.settings-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
-.settings-content { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 6px 16px 20px; }
-.settings-group { margin-bottom: 22px; }
-.settings-group-title { padding: 0 8px 8px; font-size: 13px; font-weight: 500; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }
-.settings-list { border-radius: 14px; background: var(--sheet-group); overflow: hidden; }
-.settings-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 10px 16px; font-size: 16px; text-align: left; }
-.settings-row + .settings-row:before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--separator); }
-.settings-row.stacked { flex-direction: column; align-items: stretch; gap: 6px; padding-top: 14px; padding-bottom: 12px; }
-.settings-value { color: var(--text-2); font-variant-numeric: tabular-nums; }
-.input { width: 100%; height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid transparent; background: var(--surface-2); color: var(--text); font-size: 16px; }
-select.input { appearance: none; -webkit-appearance: none; padding-right: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23E5A853' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer; }
-.row-button { display: flex; align-items: center; gap: 10px; width: 100%; color: var(--accent); font-size: 16px; text-align: left; }
+/* Presets */
+.chip-row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:500;color:var(--text-2);box-shadow:inset 0 0 0 1px var(--separator-strong);transition:background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .15s var(--ease-out),opacity .2s}
+.chip:active:not(:disabled){transform:scale(.95)}
+.chip.active{background:var(--accent-fill);color:#fff;box-shadow:0 2px 10px rgba(201,134,59,0.3)}
+.chip:disabled{opacity:.35}
+@media(hover:hover){.chip:hover:not(:disabled):not(.active){color:var(--text);background:var(--fill)}}
 
-.look-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.look-option { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-2); }
-.look-swatch { display: grid; place-items: center; width: 100%; aspect-ratio: 1.35; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--separator-strong); transition: box-shadow .2s ease; }
-.look-swatch > span { position: relative; display: grid; place-items: center; width: 40%; aspect-ratio: .82; border-radius: 7px; background: var(--flip-card); color: var(--flip-digit); font-family: var(--font-display); font-size: 16px; font-weight: 600; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
-.look-option[aria-checked=true] .look-swatch { box-shadow: 0 0 0 2px var(--accent); }
-.look-option[aria-checked=true] .look-name { color: var(--text); font-weight: 600; }
-.settings-reset { width: 100%; height: 52px; border-radius: 14px; background: var(--sheet-group); color: var(--danger); font-size: 16px; font-weight: 500; }
+/* Componentes de Configuración */
+.switch{position:relative;display:inline-block;flex-shrink:0;width:51px;height:31px}
+.switch input{position:absolute;inset:0;z-index:1;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.slider{position:absolute;inset:0;border-radius:999px;background:var(--switch-off);transition:background-color .25s ease}
+.slider:before{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#FDF3E7;box-shadow:0 3px 8px #00000026,0 1px 1px #00000029;transition:transform .3s var(--ease-out)}
+.switch input:checked+.slider{background:var(--accent)}
+.switch input:checked+.slider:before{transform:translate(20px)}
+
+.range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer;--fill-pct: 50%}
+.range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(var(--accent),var(--accent)) 0 / var(--fill-pct) 100% no-repeat,var(--fill-strong)}
+.range::-moz-range-track{height:6px;border-radius:3px;background:var(--fill-strong)}
+.range::-moz-range-progress{height:6px;border-radius:3px;background:var(--accent)}
+.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:#FDF3E7;box-shadow:0 2px 8px #00000038;transition:transform .15s var(--ease-out)}
+.range::-moz-range-thumb{width:24px;height:24px;border:0;border-radius:50%;background:#FDF3E7;box-shadow:0 2px 8px #00000038}
+.range:active::-webkit-slider-thumb{transform:scale(1.12)}
+
+/* Settings Panel */
+.settings-scrim{position:fixed;inset:0;z-index:150;background:#00000073;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+body.settings-open .settings-scrim{opacity:1;visibility:visible}
+.settings-panel{position:fixed;top:12px;right:12px;bottom:12px;z-index:160;display:flex;flex-direction:column;width:390px;max-width:calc(100vw - 24px);border-radius:24px;background:var(--sheet-bg);-webkit-backdrop-filter:saturate(180%) blur(40px);backdrop-filter:saturate(180%) blur(40px);box-shadow:var(--shadow-lg);border:1px solid var(--separator);overflow:hidden;transform:translate(calc(100% + 24px));transition:transform .45s var(--ease-out),visibility .45s;visibility:hidden}
+.settings-panel.open{transform:none;visibility:visible}
+.settings-header{display:flex;align-items:center;justify-content:space-between;padding:18px 14px 10px 24px}
+.settings-title{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.02em}
+.settings-content{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 16px 20px}
+.settings-group{margin-bottom:22px}
+.settings-group-title{padding:0 8px 8px;font-size:13px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.settings-list{border-radius:14px;background:var(--sheet-group);border:1px solid var(--separator);overflow:hidden}
+.settings-row{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;padding:10px 16px;font-size:16px;text-align:left}
+.settings-row+.settings-row:before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--separator)}
+.settings-row.stacked{flex-direction:column;align-items:stretch;gap:6px;padding-top:14px;padding-bottom:12px}
+.settings-value{color:var(--text-2);font-variant-numeric:tabular-nums}
+.input{width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--separator);background:var(--surface-2);color:var(--text);font-size:16px}
+select.input{appearance:none;-webkit-appearance:none;padding-right:38px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23E5A853' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer}
+.row-button{display:flex;align-items:center;gap:10px;width:100%;color:var(--accent);font-size:16px;font-weight:500;text-align:left}
+.row-button .icon{font-size:20px}
+
+/* Selector de Estilo (Look Picker) */
+.look-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.look-option{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;font-size:13px;font-weight:500;color:var(--text-2)}
+.look-swatch{display:grid;place-items:center;width:100%;aspect-ratio:1.35;border-radius:16px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--separator-strong);transition:box-shadow .2s ease,transform .15s var(--ease-out)}
+.look-swatch>span{position:relative;display:grid;place-items:center;width:40%;aspect-ratio:.82;border-radius:7px;background:var(--flip-card);color:var(--flip-digit);font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:-.02em;overflow:hidden;box-shadow:0 3px 8px #00000059}
+.look-swatch>span:after{content:"";position:absolute;top:50%;left:0;right:0;height:1px;background:var(--flip-fold)}
+.look-option:active .look-swatch{transform:scale(.96)}
+.look-option[aria-checked=true] .look-swatch{box-shadow:0 0 0 2px var(--accent);background:var(--surface-3)}
+.look-option[aria-checked=true] .look-name{color:var(--text);font-weight:600}
+.look-name{max-width:100%;line-height:1.25;text-align:center}
+
+.settings-reset{width:100%;height:52px;border-radius:14px;background:var(--sheet-group);border:1px solid var(--separator);color:var(--danger);font-size:16px;font-weight:600;transition:background-color .2s ease}
+.settings-reset:active{background:var(--fill-strong)}
 
 /* Modal Alarma */
-.modal-overlay { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; background: rgba(0,0,0,0.6); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); opacity: 0; transition: opacity .3s ease; }
-.modal-overlay.visible { opacity: 1; }
-.ring-modal { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; max-width: 360px; padding: 32px 24px 24px; border-radius: 28px; background: var(--sheet-bg); box-shadow: var(--shadow-lg); text-align: center; }
-.modal-icon { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 8px; border-radius: 50%; background: rgba(229, 168, 83, 0.2); color: var(--accent); animation: alarm-ring 1.2s ease-in-out infinite; }
-@keyframes alarm-ring { 0%, 60%, to { transform: rotate(0); } 10%, 30%, 50% { transform: rotate(-12deg); } 20%, 40% { transform: rotate(12deg); } }
-.modal-time { font-family: var(--font-display); font-size: 56px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.modal-label { min-height: 1.2em; font-size: 17px; color: var(--text-2); }
-.modal-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 18px; }
-.modal-actions .btn { width: 100%; }
+.modal-overlay{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px;background:#00000073;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;transition:opacity .3s ease}
+.modal-overlay.visible{opacity:1}
+.ring-modal{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:360px;padding:32px 24px 24px;border-radius:28px;background:var(--sheet-bg);border:1px solid var(--separator);box-shadow:var(--shadow-lg);text-align:center;transform:scale(.94);transition:transform .4s var(--ease-out)}
+.modal-overlay.visible .ring-modal{transform:none}
+.modal-icon{display:grid;place-items:center;width:64px;height:64px;margin-bottom:8px;border-radius:50%;background:rgba(229,168,83,0.18);color:#E5A853;animation:alarm-ring 1.2s ease-in-out infinite}
+.modal-icon .icon{font-size:34px}
+@keyframes alarm-ring{0%,60%,to{transform:rotate(0)}10%,30%,50%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}}
+.modal-time{font-family:var(--font-display);font-size:56px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.modal-label{min-height:1.2em;font-size:17px;color:var(--text-2)}
+.modal-actions{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:18px}
+.modal-actions .btn{width:100%}
 
-/* Flip Clock Container */
-#timer-page { --u100: min(1.5px, calc(min((100vw - 44px) / 618, (var(--vh100) - 540px + 2 * (32px - var(--stage-gap))) / 220) * .84)); --u: max(.3px, calc((var(--u100) + (1px - var(--u100)) * var(--display-grow)) * var(--display-shrink))); --card-w: calc(180 * var(--u)); --card-h: calc(220 * var(--u)); --card-r: calc(24 * var(--u)); --card-gap: calc(14 * var(--u)); --digit-size: calc(118 * var(--u)); }
-body.fullscreen-active #timer-page { --u: max(.3px, calc(min((100vw - 96px) / 618, (var(--vh100) - 200px) / 220) * var(--display-shrink))); }
-.timer-face { display: flex; flex-direction: column; align-items: center; gap: calc(22 * var(--u)); }
-.timer-progress { width: 100%; max-width: calc(3 * var(--card-w) + 2 * var(--card-gap)); height: 3px; border-radius: 2px; background: var(--fill); overflow: hidden; opacity: 0; transition: opacity .4s ease; }
-body.timer-running .timer-progress { opacity: 1; }
-.timer-progress-bar { height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 1s linear; }
+.toast{position:fixed;left:50%;bottom:calc(var(--dock-space) + 8px);z-index:170;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 32px);padding:12px 20px;border-radius:999px;background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);box-shadow:var(--shadow-lg);color:var(--text);font-size:15px;font-weight:500;text-align:center;opacity:0;visibility:hidden;transform:translate(-50%,12px) scale(.98);transition:opacity .3s ease,transform .4s var(--ease-out),visibility .3s;pointer-events:none}
+.toast.show{opacity:1;visibility:visible;transform:translate(-50%)}
 
-.flip-display { display: flex; align-items: center; justify-content: center; gap: var(--card-gap, 16px); }
-.card { position: relative; flex-shrink: 0; width: var(--card-w); height: var(--card-h); border-radius: var(--card-r); background: var(--flip-card); box-shadow: var(--flip-shadow); isolation: isolate; }
-.card:after { content: ""; position: absolute; inset: 0; z-index: 5; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--flip-edge), inset 0 1px 0 var(--flip-highlight); pointer-events: none; }
-.divider { position: absolute; top: 50%; left: 0; right: 0; z-index: 6; height: 1px; transform: translateY(-50%); background: var(--flip-fold); pointer-events: none; }
-.flip-card-container, .flip-unit { position: absolute; inset: 0; border-radius: inherit; }
-.flip-card-container { overflow: hidden; isolation: isolate; }
-.flip-unit { perspective: calc(var(--card-h) * 4); }
-.flip-top, .flip-bottom, .flip-panel { position: absolute; left: 0; width: 100%; height: 50%; overflow: hidden; box-shadow: inset 0 1px 1px var(--flip-inner); }
-.flip-top, .flip-panel-top { top: 0; border-radius: var(--card-r) var(--card-r) 0 0; background: var(--flip-card-top, var(--flip-card)); }
-.flip-bottom, .flip-panel-bottom { bottom: 0; border-radius: 0 0 var(--card-r) var(--card-r); background: var(--flip-card); }
-.flip-panel { visibility: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.flip-panel.flip-a, .flip-panel.flip-b { visibility: visible; }
-.flip-panel-top { z-index: 2; transform-origin: 50% 100%; }
-.flip-panel-bottom { z-index: 1; transform-origin: 50% 0; }
-.flip-panel:after { content: ""; position: absolute; inset: 0; background: var(--flip-shade); opacity: 0; pointer-events: none; }
-.flip-text { position: absolute; left: 0; width: 100%; height: var(--card-h); font-family: var(--font-display); font-size: var(--digit-size); font-weight: 600; line-height: var(--card-h); font-variant-numeric: tabular-nums; color: var(--flip-digit); text-align: center; user-select: none; }
-.flip-top .flip-text, .flip-panel-top .flip-text { top: 0; }
-.flip-bottom .flip-text, .flip-panel-bottom .flip-text { top: auto; bottom: 0; }
-
-.flip-panel-top.flip-a { animation: flip-fall var(--flip-duration) linear forwards; }
-.flip-panel-top.flip-b { animation: flip-fall-b var(--flip-duration) linear forwards; }
-.flip-panel-bottom.flip-a { animation: flip-land var(--flip-duration) linear forwards; }
-.flip-panel-bottom.flip-b { animation: flip-land-b var(--flip-duration) linear forwards; }
-.flip-panel-top.flip-a:after { animation: flip-dim-fall var(--flip-duration) linear forwards; }
-.flip-panel-top.flip-b:after { animation: flip-dim-fall-b var(--flip-duration) linear forwards; }
-.flip-panel-bottom.flip-a:after { animation: flip-dim-land var(--flip-duration) linear forwards; }
-.flip-panel-bottom.flip-b:after { animation: flip-dim-land-b var(--flip-duration) linear forwards; }
-
-@keyframes flip-fall { 0% { transform: rotateX(0); animation-timing-function: cubic-bezier(.5,0,.85,.45); } 48%, to { transform: rotateX(-90.5deg); } }
-@keyframes flip-fall-b { 0% { transform: rotateX(0); animation-timing-function: cubic-bezier(.5,0,.85,.45); } 48%, to { transform: rotateX(-90.5deg); } }
-@keyframes flip-land { 0%, 48% { transform: rotateX(90.5deg); animation-timing-function: cubic-bezier(.2,.55,.35,1); } to { transform: rotateX(0); } }
-@keyframes flip-land-b { 0%, 48% { transform: rotateX(90.5deg); animation-timing-function: cubic-bezier(.2,.55,.35,1); } to { transform: rotateX(0); } }
-@keyframes flip-dim-fall { 0% { opacity: 0; } 48%, to { opacity: 1; } }
-@keyframes flip-dim-fall-b { 0% { opacity: 0; } 48%, to { opacity: 1; } }
-@keyframes flip-dim-land { 0%, 48% { opacity: 1; } to { opacity: 0; } }
-@keyframes flip-dim-land-b { 0%, 48% { opacity: 1; } to { opacity: 0; } }
-
-body[data-look=simple] { --flip-duration: .4s; }
-body[data-look=simple] .flip-top, body[data-look=simple] .flip-panel-top { background: var(--flip-card); }
-body[data-look=simple] .flip-panel:after { display: none; }
-body[data-look=simple] .flip-panel-top.flip-a { animation: flip-simple-top var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards; }
-body[data-look=simple] .flip-panel-top.flip-b { animation: flip-simple-top-b var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards; }
-body[data-look=simple] .flip-panel-bottom.flip-a { animation: flip-simple-bottom var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards; }
-body[data-look=simple] .flip-panel-bottom.flip-b { animation: flip-simple-bottom-b var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards; }
-@keyframes flip-simple-top { 0% { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
-@keyframes flip-simple-top-b { 0% { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
-@keyframes flip-simple-bottom { 0% { transform: rotateX(180deg); } to { transform: rotateX(0); } }
-@keyframes flip-simple-bottom-b { 0% { transform: rotateX(180deg); } to { transform: rotateX(0); } }
-
-.flip-colon { display: flex; flex-direction: column; justify-content: center; gap: calc(var(--card-h) * .17); flex-shrink: 0; }
-.flip-colon:before, .flip-colon:after { content: ""; width: calc(var(--card-h) * .05); height: calc(var(--card-h) * .05); border-radius: 50%; background: var(--accent); }
-
-.timer-setup { display: flex; flex-direction: column; align-items: center; gap: 22px; max-width: 820px; transition: opacity .3s ease; }
-body.timer-running .timer-setup { opacity: .4; }
-#presets-container { display: grid; grid-template-columns: repeat(8, auto); justify-content: center; gap: 8px; }
-@media(max-width: 759px) {
-  #presets-container { display: flex; flex-wrap: nowrap; justify-content: flex-start; width: 100vw; max-width: 100vw; padding: 2px 20px; overflow-x: auto; scrollbar-width: none; }
-  #presets-container::-webkit-scrollbar { display: none; }
-  #presets-container .chip { flex-shrink: 0; }
+/* Escala y Tarjetas Flip */
+.page-container{
+    --u100: min(1.5px, calc(min((100vw - 44px) / 618, (var(--vh100) - 540px + 2 * (32px - var(--stage-gap))) / 220) * .84));
+    --u: max(.3px, calc((var(--u100) + (1px - var(--u100)) * var(--display-grow)) * var(--display-shrink) * var(--display-scale)));
 }
-.custom-time { display: flex; align-items: flex-start; gap: 6px; border: 0; }
-.custom-time-field { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.custom-time-field label { font-size: 12px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; }
-.time-input { width: 76px; height: 52px; border: 0; border-radius: 14px; background: var(--fill); color: var(--text); font-family: var(--font-display); font-size: 26px; font-weight: 600; text-align: center; appearance: textfield; transition: box-shadow .2s ease, background-color .2s ease; }
-.time-input::-webkit-outer-spin-button, .time-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.time-input:focus { outline: none; background: var(--fill-strong); box-shadow: 0 0 0 2px var(--accent); }
-.custom-time-colon { height: 52px; line-height: 52px; font-size: 22px; font-weight: 600; color: var(--text-3); }
-
-body.fullscreen-active .app-header, body.fullscreen-active .timer-setup, body.fullscreen-active .hide-in-fullscreen { display: none !important; }
-body.fullscreen-active main { padding-top: 0; }
-
-@media(max-width: 599px) {
-  :root { --header-h: 56px; --dock-space: calc(84px + env(safe-area-inset-bottom)); }
-  .settings-panel { inset: auto 0 0; width: 100%; max-width: none; max-height: 88svh; border-radius: 24px 24px 0 0; transform: translateY(100%); }
-  .settings-panel.open { transform: none; }
+body.fullscreen-active .page-container{
+    --u: max(.3px, calc(min((100vw - 96px) / 618, (var(--vh100) - 200px) / 220) * var(--display-shrink) * var(--display-scale)));
 }
+body[data-layout=vertical] .flip-display{flex-direction:column}
+body[data-layout=vertical] .flip-colon{flex-direction:row}
+
+.flip-display{display:flex;align-items:center;justify-content:center;gap:var(--card-gap, 16px)}
+.card{position:relative;flex-shrink:0;width:var(--card-w);height:var(--card-h);border-radius:var(--card-r);background:var(--flip-card);box-shadow:var(--flip-shadow);isolation:isolate;transition:border-radius .3s ease}
+.card:after{content:"";position:absolute;inset:0;z-index:5;border-radius:inherit;box-shadow:inset 0 0 0 1px var(--flip-edge),inset 0 1px 0 var(--flip-highlight);pointer-events:none}
+.divider{position:absolute;top:50%;left:0;right:0;z-index:6;height:1px;transform:translateY(-50%);background:var(--flip-fold);box-shadow:0 0.5px 1px rgba(0,0,0,0.5);pointer-events:none}
+.flip-card-container,.flip-unit{position:absolute;inset:0;border-radius:inherit}
+.flip-card-container{overflow:hidden;isolation:isolate}
+.flip-unit{perspective:calc(var(--card-h) * 4)}
+.flip-top,.flip-bottom,.flip-panel{position:absolute;left:0;width:100%;height:50%;overflow:hidden;box-shadow:inset 0 1px 1px var(--flip-inner)}
+.flip-top,.flip-panel-top{top:0;border-radius:var(--card-r) var(--card-r) 0 0;background:var(--flip-card-top, var(--flip-card))}
+.flip-bottom,.flip-panel-bottom{bottom:0;border-radius:0 0 var(--card-r) var(--card-r);background:var(--flip-card)}
+.flip-panel{visibility:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip-panel.flip-a,.flip-panel.flip-b{visibility:visible}
+.flip-panel-top{z-index:2;transform-origin:50% 100%}
+.flip-panel-bottom{z-index:1;transform-origin:50% 0}
+.flip-panel:after{content:"";position:absolute;inset:0;background:var(--flip-shade);opacity:0;pointer-events:none}
+.flip-text{position:absolute;left:0;width:100%;height:var(--card-h);font-family:var(--font-display);font-size:var(--digit-size);font-weight:600;line-height:var(--card-h);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--flip-digit);text-align:center;user-select:none}
+.flip-top .flip-text,.flip-panel-top .flip-text{top:0}
+.flip-bottom .flip-text,.flip-panel-bottom .flip-text{top:auto;bottom:0}
+
+.flip-panel-top.flip-a{animation:flip-fall var(--flip-duration) linear forwards}
+.flip-panel-top.flip-b{animation:flip-fall-b var(--flip-duration) linear forwards}
+.flip-panel-bottom.flip-a{animation:flip-land var(--flip-duration) linear forwards}
+.flip-panel-bottom.flip-b{animation:flip-land-b var(--flip-duration) linear forwards}
+.flip-panel-top.flip-a:after{animation:flip-dim-fall var(--flip-duration) linear forwards}
+.flip-panel-top.flip-b:after{animation:flip-dim-fall-b var(--flip-duration) linear forwards}
+.flip-panel-bottom.flip-a:after{animation:flip-dim-land var(--flip-duration) linear forwards}
+.flip-panel-bottom.flip-b:after{animation:flip-dim-land-b var(--flip-duration) linear forwards}
+
+@keyframes flip-fall{0%{transform:rotateX(0);animation-timing-function:cubic-bezier(.5,0,.85,.45)}48%,to{transform:rotateX(-90.5deg)}}
+@keyframes flip-fall-b{0%{transform:rotateX(0);animation-timing-function:cubic-bezier(.5,0,.85,.45)}48%,to{transform:rotateX(-90.5deg)}}
+@keyframes flip-land{0%,48%{transform:rotateX(90.5deg);animation-timing-function:cubic-bezier(.2,.55,.35,1)}to{transform:rotateX(0)}}
+@keyframes flip-land-b{0%,48%{transform:rotateX(90.5deg);animation-timing-function:cubic-bezier(.2,.55,.35,1)}to{transform:rotateX(0)}}
+@keyframes flip-dim-fall{0%{opacity:0;animation-timing-function:ease-in}48%,to{opacity:1}}
+@keyframes flip-dim-fall-b{0%{opacity:0;animation-timing-function:ease-in}48%,to{opacity:1}}
+@keyframes flip-dim-land{0%,48%{opacity:1;animation-timing-function:ease-out}to{opacity:0}}
+@keyframes flip-dim-land-b{0%,48%{opacity:1;animation-timing-function:ease-out}to{opacity:0}}
+
+/* Variaciones Visuales (Looks) */
+body[data-look=simple]{--flip-duration: .4s}
+body[data-look=simple] .flip-top,body[data-look=simple] .flip-panel-top{background:var(--flip-card)}
+body[data-look=simple] .flip-panel:after{display:none}
+body[data-look=simple] .flip-panel-top.flip-a{animation:flip-simple-top var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards}
+body[data-look=simple] .flip-panel-top.flip-b{animation:flip-simple-top-b var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards}
+body[data-look=simple] .flip-panel-bottom.flip-a{animation:flip-simple-bottom var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards}
+body[data-look=simple] .flip-panel-bottom.flip-b{animation:flip-simple-bottom-b var(--flip-duration) cubic-bezier(.25,.1,.25,1) forwards}
+@keyframes flip-simple-top{0%{transform:rotateX(0)}to{transform:rotateX(-180deg)}}
+@keyframes flip-simple-top-b{0%{transform:rotateX(0)}to{transform:rotateX(-180deg)}}
+@keyframes flip-simple-bottom{0%{transform:rotateX(180deg)}to{transform:rotateX(0)}}
+@keyframes flip-simple-bottom-b{0%{transform:rotateX(180deg)}to{transform:rotateX(0)}}
+
+body[data-look=pro]{--flip-duration: .48s;--flip-shade: var(--flip-pro-shade)}
+body[data-look=pro] .flip-card-container{overflow:visible}
+body[data-look=pro] .flip-top,body[data-look=pro] .flip-bottom,body[data-look=pro] .flip-panel{box-shadow:none}
+body[data-look=pro] .flip-top,body[data-look=pro] .flip-panel-top{background:var(--flip-card)}
+body[data-look=pro] .divider{height:max(1px,calc(var(--card-h) * .0065));background:var(--flip-pro-fold);box-shadow:0 1px 0 var(--flip-fold-glint)}
+body[data-look=pro] .divider:before,body[data-look=pro] .divider:after{content:"";position:absolute;top:50%;width:max(2px,calc(var(--card-w) * .018));height:max(4px,calc(var(--card-h) * .07));background:var(--flip-pro-fold);transform:translateY(-50%)}
+body[data-look=pro] .divider:before{left:0;border-radius:0 999px 999px 0}
+body[data-look=pro] .divider:after{right:0;border-radius:999px 0 0 999px}
+body[data-look=pro] .flip-top:after,body[data-look=pro] .flip-bottom:after{content:"";position:absolute;left:0;right:0;pointer-events:none}
+body[data-look=pro] .flip-top:after{bottom:0;height:12%;background:linear-gradient(to top,var(--flip-fold-shade),transparent)}
+body[data-look=pro] .flip-bottom:after{top:0;height:7%;background:linear-gradient(to bottom,var(--flip-fold-shade),transparent)}
+body[data-look=pro] .flip-panel-top.flip-a{animation:flip-pro-fall var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-top.flip-b{animation:flip-pro-fall-b var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-bottom.flip-a{animation:flip-pro-land var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-bottom.flip-b{animation:flip-pro-land-b var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-top.flip-a:after{animation:flip-pro-dim-fall var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-top.flip-b:after{animation:flip-pro-dim-fall-b var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-bottom.flip-a:after{animation:flip-pro-dim-land var(--flip-duration) linear forwards}
+body[data-look=pro] .flip-panel-bottom.flip-b:after{animation:flip-pro-dim-land-b var(--flip-duration) linear forwards}
+@keyframes flip-pro-fall{0%{transform:rotateX(0);animation-timing-function:cubic-bezier(.55,0,.9,.45)}50%,to{transform:rotateX(-91deg)}}
+@keyframes flip-pro-fall-b{0%{transform:rotateX(0);animation-timing-function:cubic-bezier(.55,0,.9,.45)}50%,to{transform:rotateX(-91deg)}}
+@keyframes flip-pro-land{0%,50%{transform:rotateX(91deg);animation-timing-function:cubic-bezier(.15,.6,.45,1)}86%{transform:rotateX(0);animation-timing-function:ease-out}93%{transform:rotateX(7deg);animation-timing-function:ease-in}to{transform:rotateX(0)}}
+@keyframes flip-pro-land-b{0%,50%{transform:rotateX(91deg);animation-timing-function:cubic-bezier(.15,.6,.45,1)}86%{transform:rotateX(0);animation-timing-function:ease-out}93%{transform:rotateX(7deg);animation-timing-function:ease-in}to{transform:rotateX(0)}}
+@keyframes flip-pro-dim-fall{0%{opacity:0}50%,to{opacity:1}}
+@keyframes flip-pro-dim-fall-b{0%{opacity:0}50%,to{opacity:1}}
+@keyframes flip-pro-dim-land{0%,50%{opacity:1}86%,to{opacity:0}}
+@keyframes flip-pro-dim-land-b{0%,50%{opacity:1}86%,to{opacity:0}}
+
+.flip-colon{display:flex;flex-direction:column;justify-content:center;gap:calc(var(--card-h) * .17);flex-shrink:0}
+.flip-colon:before,.flip-colon:after{content:"";width:calc(var(--card-h) * .05);height:calc(var(--card-h) * .05);border-radius:50%;background:var(--accent)}
+
+/* Dimensiones del Temporizador */
+#timer-page{--cap: 1.5px;--fit: min((100vw - 44px) / 618, (var(--vh100) - 540px + 2 * (32px - var(--stage-gap))) / 220);--card-w: calc(180 * var(--u));--card-h: calc(220 * var(--u));--card-r: calc(24 * var(--u));--card-gap: calc(14 * var(--u));--digit-size: calc(118 * var(--u))}
+body[data-layout=vertical] #timer-page{--fit: min((100vw - 44px) / 180, (var(--vh100) - 300px + (32px - var(--stage-gap))) / 740)}
+.timer-face{display:flex;flex-direction:column;align-items:center;gap:calc(22 * var(--u))}
+.timer-progress{width:100%;max-width:calc(3 * var(--card-w) + 2 * var(--card-gap));height:4px;border-radius:2px;background:var(--fill);overflow:hidden;opacity:0;transition:opacity .4s ease, box-shadow .4s ease}
+body.timer-running .timer-progress{opacity:1}
+
+/* Glow para últimos 10 segundos */
+body.timer-running .timer-progress.is-warning{box-shadow:0 0 12px var(--warning)}
+body.timer-running .timer-progress.is-warning .timer-progress-bar{background:var(--warning);box-shadow:0 0 8px var(--warning)}
+
+.timer-progress-bar{height:100%;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform 1s linear, background-color .3s ease}
+.timer-display.is-finished .card{animation:timer-done .9s ease-in-out 3}
+@keyframes timer-done{50%{opacity:.35}}
+
+/* Presets & Custom Time Input */
+#presets-container{display:grid;grid-template-columns:repeat(8,auto);justify-content:center;gap:8px}
+@media(max-width:759px){
+  #presets-container{display:flex;flex-wrap:nowrap;justify-content:flex-start;width:100vw;max-width:100vw;padding:2px 20px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 20px,#000 calc(100% - 20px),transparent);mask-image:linear-gradient(90deg,transparent,#000 20px,#000 calc(100% - 20px),transparent)}
+  #presets-container::-webkit-scrollbar{display:none}
+  #presets-container .chip{flex-shrink:0}
+}
+.timer-setup{display:flex;flex-direction:column;align-items:center;gap:22px;max-width:820px;transition:opacity .3s ease}
+body.timer-running .timer-setup{opacity:.4}
+.custom-time{display:flex;align-items:flex-start;gap:6px;padding:0;border:0}
+.custom-time-field{display:flex;flex-direction:column;align-items:center;gap:6px}
+.custom-time-field label{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
+.time-input{width:76px;height:52px;border:1px solid var(--separator);border-radius:14px;background:var(--fill);color:var(--text);font-family:var(--font-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;-moz-appearance:textfield;appearance:textfield;transition:box-shadow .2s ease,background-color .2s ease,border-color .2s ease}
+.time-input::-webkit-outer-spin-button,.time-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.time-input:focus{outline:none;background:var(--fill-strong);border-color:var(--accent);box-shadow:0 0 0 3px rgba(229,168,83,0.2)}
+.time-input:disabled{opacity:.6}
+.custom-time-colon{height:52px;line-height:52px;font-size:22px;font-weight:600;color:var(--text-3)}
+
+/* Fullscreen Overrides */
+body.fullscreen-active .app-header,body.fullscreen-active .timer-setup,body.fullscreen-active .hide-in-fullscreen{display:none!important}
+body.fullscreen-active main{padding-top:0}
+body.fullscreen-active .page-content-wrapper{min-height:100vh;padding:32px}
+
+@media(max-width:599px){
+  :root{--header-h:56px;--dock-space:calc(84px + env(safe-area-inset-bottom))}
+  .app-header{padding:0 max(12px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+  .page-content-wrapper{padding:20px 16px calc(var(--dock-space) + 12px)}
+  .btn{height:46px;padding:0 22px}
+  .btn-lg{height:54px}
+  .btn-primary{min-width:132px}
+  .settings-panel{inset:auto 0 0;width:100%;max-width:none;max-height:88svh;border-radius:24px 24px 0 0;padding-bottom:env(safe-area-inset-bottom);transform:translateY(100%)}
+  .settings-panel:before{content:"";display:block;flex-shrink:0;width:36px;height:5px;margin:8px auto 0;border-radius:3px;background:var(--text-3)}
+  .settings-header{padding:10px 12px 6px 20px}
+  .time-input{width:68px;height:48px;font-size:22px}
+  .custom-time-colon{height:48px;line-height:48px}
+}
+@media(max-height:520px){:root{--header-h:52px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body data-look="simple" data-page="timer">
+<!-- Contenedor para el fondo 3D con Three.js -->
+<div id="bg-canvas-container"></div>
+
+<!-- Region ARIA Live para Accesibilidad -->
+<div id="sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
 <div class="app-container">
   <header class="app-header">
     <div class="header-brand">
@@ -274,7 +375,7 @@ body.fullscreen-active main { padding-top: 0; }
       <h1>Temporizador</h1>
     </div>
     <div class="header-actions">
-      <button id="settings-toggle" class="icon-button" aria-label="Abrir Configuración" aria-expanded="false">
+      <button id="settings-toggle" class="icon-button" aria-label="Abrir Configuración" aria-controls="settings-panel" aria-expanded="false">
         <svg class="icon" viewBox="0 -960 960 960"><path d="m401-100-18-120q-21-7-45-21-23-13-40-28l-112 51-80-141 101-75-3-23-1-23 1-22 3-24-101-75 80-140 111 50q18-15 41-28t44-20l19-121h158l18 121q22 8 45 20 22 12 39 28l114-50 79 140-102 74 3 24 1 23-1 22-3 25 102 74-80 141-113-51q-18 15-40 29-22 13-44 19l-18 121zm36-45h85l15-112q32-8 59-24 28-16 53-40l104 45 40-71-92-68 6-33q3-16 3-32 0-17-2-32t-7-32l93-69-40-71-105 45q-21-24-51-42t-62-22l-13-112h-86l-13 112q-33 6-61 22t-52 42l-105-45-40 71 92 68q-4 15-6 32-3 16-3 33t3 33l6 32-92 68 40 71 104-45q24 25 52 41 29 15 62 23zm42-222q47 0 80-33t33-80-33-80-80-33-80 33-33 80 33 80 80 33m1-113"/></svg>
       </button>
       <button id="fullscreen-btn" class="icon-button" aria-label="Pantalla completa">
@@ -291,7 +392,7 @@ body.fullscreen-active main { padding-top: 0; }
         <div class="timer-face">
           <div class="flip-display timer-display" id="timer-display">
             <!-- Horas -->
-            <div class="card">
+            <div class="card" id="timer-hours-card">
               <div class="divider"></div>
               <div class="flip-card-container">
                 <div class="flip-unit" id="timer-hours-unit">
@@ -302,9 +403,9 @@ body.fullscreen-active main { padding-top: 0; }
                 </div>
               </div>
             </div>
-            <div class="flip-colon" aria-hidden="true"></div>
+            <div class="flip-colon" id="timer-hours-colon" aria-hidden="true"></div>
             <!-- Minutos -->
-            <div class="card">
+            <div class="card" id="timer-minutes-card">
               <div class="divider"></div>
               <div class="flip-card-container">
                 <div class="flip-unit" id="timer-minutes-unit">
@@ -317,7 +418,7 @@ body.fullscreen-active main { padding-top: 0; }
             </div>
             <div class="flip-colon" aria-hidden="true"></div>
             <!-- Segundos -->
-            <div class="card">
+            <div class="card" id="timer-seconds-card">
               <div class="divider"></div>
               <div class="flip-card-container">
                 <div class="flip-unit" id="timer-seconds-unit">
@@ -329,7 +430,7 @@ body.fullscreen-active main { padding-top: 0; }
               </div>
             </div>
           </div>
-          <div class="timer-progress" aria-hidden="true">
+          <div class="timer-progress" aria-hidden="true" id="timer-progress-container">
             <div class="timer-progress-bar" id="timer-progress-bar"></div>
           </div>
         </div>
@@ -354,11 +455,13 @@ body.fullscreen-active main { padding-top: 0; }
             <button type="button" class="chip preset-button" data-seconds="15">15 seg</button>
             <button type="button" class="chip preset-button" data-seconds="30">30 seg</button>
             <button type="button" class="chip preset-button" data-seconds="60">1 min</button>
-            <button type="button" class="chip preset-button" data-seconds="120">2 min</button>
+            <button type="button" class="chip preset-button" data-seconds="180">3 min</button>
             <button type="button" class="chip preset-button" data-seconds="300">5 min</button>
             <button type="button" class="chip preset-button" data-seconds="600">10 min</button>
             <button type="button" class="chip preset-button" data-seconds="900">15 min</button>
+            <button type="button" class="chip preset-button" data-seconds="1500">25 min</button>
             <button type="button" class="chip preset-button" data-seconds="1800">30 min</button>
+            <button type="button" class="chip preset-button" data-seconds="3600">60 min</button>
           </div>
 
           <fieldset class="custom-time">
@@ -382,24 +485,27 @@ body.fullscreen-active main { padding-top: 0; }
       </section>
     </div>
 
-    <!-- Modal de Alarma -->
+    <!-- Modal Fin de Tiempo -->
     <div id="ring-overlay" class="modal-overlay" hidden>
       <div class="ring-modal" role="alertdialog" aria-modal="true">
         <div class="modal-icon">
           <svg class="icon" viewBox="0 -960 960 960"><path d="M368-865v-45h224v45zm89 448h46v-218h-46zM348-128q-62-27-108-73t-73-108-27-132 27-132 73-108 108-73 132-27q64 0 121 23 57 22 102 61l46-46 32 32-46 46q36 40 61 96 24 56 24 128 0 70-27 132t-73 108-108 73-132 27-132-27m341-104q86-86 86-209 0-122-86-208t-209-86-209 86-86 208 86 209 209 86 209-86M480-440"/></svg>
         </div>
         <div id="ring-time" class="modal-time">00:00</div>
-        <p class="modal-label">¡Se acabó el tiempo!</p>
+        <p id="ring-label" class="modal-label">¡Se acabó el tiempo!</p>
         <div class="modal-actions">
           <button type="button" id="ring-ok" class="btn btn-primary btn-lg">Aceptar</button>
-          <button type="button" id="ring-secondary" class="btn btn-secondary btn-lg">Reiniciar</button>
+          <button type="button" id="ring-secondary" class="btn btn-secondary btn-lg">
+            <svg class="icon" viewBox="0 -960 960 960"><path d="M448-143q-114-11-191-96t-77-200q0-69 31-131 31-61 86-102l33 33q-50 33-77 86-28 54-28 114 0 97 64 168 63 71 159 83zm65 1v-45q96-15 159-85 63-71 63-167 0-107-74-181t-180-74h-27l66 66-33 32-121-121 121-121 33 33-66 66h27q125 0 212 87 88 88 88 213 0 115-77 200t-191 97"/></svg>
+            <span>Reiniciar</span>
+          </button>
         </div>
       </div>
     </div>
   </main>
 </div>
 
-<!-- Configuración -->
+<!-- Panel de Configuración -->
 <div id="settings-scrim" class="settings-scrim"></div>
 <div id="settings-panel" class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" inert>
   <div class="settings-header">
@@ -409,8 +515,10 @@ body.fullscreen-active main { padding-top: 0; }
     </button>
   </div>
   <div class="settings-content">
+    
+    <!-- Estilo Visual -->
     <div class="settings-group">
-      <h3 class="settings-group-title">Estilo de giro</h3>
+      <h3 class="settings-group-title">Estilo Visual</h3>
       <div class="look-picker" role="radiogroup">
         <button type="button" class="look-option" data-look="simple" role="radio" aria-checked="true">
           <span class="look-swatch"><span>12</span></span>
@@ -420,8 +528,76 @@ body.fullscreen-active main { padding-top: 0; }
           <span class="look-swatch"><span>12</span></span>
           <span class="look-name">Estándar</span>
         </button>
+        <button type="button" class="look-option" data-look="pro" role="radio" aria-checked="false">
+          <span class="look-swatch"><span>12</span></span>
+          <span class="look-name">Profesional</span>
+        </button>
       </div>
     </div>
+
+    <!-- Fondo 3D Three.js -->
+    <div class="settings-group">
+      <h3 class="settings-group-title">Efecto 3D (Three.js)</h3>
+      <div class="settings-list">
+        <div class="settings-row">
+          <label for="threejs-particles-toggle">Fondo de Partículas 3D</label>
+          <label class="switch"><input type="checkbox" id="threejs-particles-toggle" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Escala y Disposición -->
+    <div class="settings-group">
+      <h3 class="settings-group-title">Pantalla y Tamaño</h3>
+      <div class="settings-list">
+        <div class="settings-row">
+          <label for="scale-range">Escala del Reloj</label>
+          <span class="settings-value" id="scale-value">100%</span>
+        </div>
+        <div class="settings-row stacked">
+          <input type="range" class="range" id="scale-range" min="60" max="140" step="5" value="100">
+        </div>
+        <div class="settings-row">
+          <label for="layout-select">Disposición</label>
+          <select id="layout-select" class="input" style="width:auto;max-width:58%;height:36px;font-size:15px;background:var(--fill)">
+            <option value="auto" selected>Automática</option>
+            <option value="horizontal">Horizontal</option>
+            <option value="vertical">Vertical</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label for="show-hours-toggle">Mostrar Horas</label>
+          <label class="switch"><input type="checkbox" id="show-hours-toggle" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sonido por Segundo -->
+    <div class="settings-group">
+      <h3 class="settings-group-title">Sonido por Segundo</h3>
+      <div class="settings-list">
+        <div class="settings-row">
+          <label for="tick-sound-toggle">Sonido tictac / tarjeta</label>
+          <label class="switch"><input type="checkbox" id="tick-sound-toggle"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <label for="tick-sound-select">Tipo de sonido</label>
+          <select id="tick-sound-select" class="input" style="width:auto;max-width:58%;height:36px;font-size:15px;background:var(--fill)">
+            <option value="card" selected>Tarjeta (flip)</option>
+            <option value="tick">Tictac suave</option>
+            <option value="click">Click seco</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <button type="button" id="tick-test-sound" class="row-button">
+            <svg class="icon" viewBox="0 -960 960 960"><path d="M560-131v-82q90-26 145-98t55-169q0-97-55-169T560-747v-82q124 28 202 125.5T840-480q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm360-192v-106L354-540H200v120h154l126-118Zm36 294v-82q43-18 69.5-55.5T612-480q0-50-26.5-87.5T516-623v-82q76 22 124 82t48 143q0 83-48 143t-124 82Z"/></svg>
+            <span>Probar Tictac</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sonido de Alarma -->
     <div class="settings-group">
       <h3 class="settings-group-title">Sonido de Alarma</h3>
       <div class="settings-list">
@@ -432,11 +608,12 @@ body.fullscreen-active main { padding-top: 0; }
         <div class="settings-row">
           <label for="timer-sound-select">Seleccionar Sonido</label>
           <select id="timer-sound-select" class="input" style="width:auto;max-width:58%;height:36px;font-size:15px;background:var(--fill)">
-            <option value="classic" selected>Clásica</option>
+            <option value="classic" selected>Alarma clásica</option>
             <option value="beacon">Baliza</option>
             <option value="sunrise">Amanecer</option>
             <option value="digital">Digital</option>
             <option value="chime">Timbre</option>
+            <option value="melody">Melodía</option>
           </select>
         </div>
         <div class="settings-row">
@@ -447,19 +624,246 @@ body.fullscreen-active main { padding-top: 0; }
           <input type="range" class="range" id="timer-volume" min="10" max="100" step="5" value="80">
         </div>
         <div class="settings-row">
-          <button type="button" id="timer-test-sound" class="row-button">Probar Sonido</button>
+          <label for="volume-ramp-toggle">Subida Progresiva (Crescendo)</label>
+          <label class="switch"><input type="checkbox" id="volume-ramp-toggle"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <label for="timer-repeat-toggle">Sonar hasta detenerlo</label>
+          <label class="switch"><input type="checkbox" id="timer-repeat-toggle" checked><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <label for="ui-sound-toggle">Sonidos de Interfaz (UI)</label>
+          <label class="switch"><input type="checkbox" id="ui-sound-toggle" checked><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <label for="vibration-toggle">Vibración Háptica</label>
+          <label class="switch"><input type="checkbox" id="vibration-toggle" checked><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <button type="button" id="timer-test-sound" class="row-button">
+            <svg class="icon" viewBox="0 -960 960 960"><path d="M560-131v-82q90-26 145-98t55-169q0-97-55-169T560-747v-82q124 28 202 125.5T840-480q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm360-192v-106L354-540H200v120h154l126-118Zm36 294v-82q43-18 69.5-55.5T612-480q0-50-26.5-87.5T516-623v-82q76 22 124 82t48 143q0 83-48 143t-124 82Z"/></svg>
+            <span>Probar Alarma</span>
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Sistema y PWA -->
+    <div class="settings-group">
+      <h3 class="settings-group-title">Sistema y Pantalla</h3>
+      <div class="settings-list">
+        <div class="settings-row">
+          <label for="system-notification-toggle">Notificaciones de Escritorio</label>
+          <label class="switch"><input type="checkbox" id="system-notification-toggle"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <label for="wake-lock-toggle">Mantener Pantalla Encendida</label>
+          <label class="switch"><input type="checkbox" id="wake-lock-toggle" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exportación e Importación -->
+    <div class="settings-group">
+      <h3 class="settings-group-title">Datos y Ajustes</h3>
+      <div class="settings-list">
+        <div class="settings-row">
+          <button type="button" id="export-config-btn" class="row-button">
+            <svg class="icon" viewBox="0 -960 960 960"><path d="M480-320 280-520l56-56 104 104v-328h80v328l104-104 56 56-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
+            <span>Exportar Configuración</span>
+          </button>
+        </div>
+        <div class="settings-row">
+          <button type="button" id="import-config-btn" class="row-button">
+            <svg class="icon" viewBox="0 -960 960 960"><path d="M440-440v-328L336-664l-56-56 200-200 200 200-56 56-104-104v328h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
+            <span>Importar Configuración</span>
+          </button>
+          <input type="file" id="import-config-file" accept=".json" style="display:none">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <button type="button" id="reset-settings" class="settings-reset">Restablecer valores predeterminados</button>
+    </div>
   </div>
 </div>
+
+<div id="app-toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function() {
   'use strict';
 
-  // Lógica de tarjetas Flip
-  const FLIP_MS = { simple: 400, standard: 500 };
+  // ========== Three.js Background 3D Particles ==========
+  let threeScene, threeCamera, threeRenderer, particleMesh;
+  let particlesEnabled = true;
+
+  function initThreeBackground() {
+    const container = document.getElementById('bg-canvas-container');
+    if (!container || !window.THREE) return;
+
+    threeScene = new THREE.Scene();
+    threeCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    threeCamera.position.z = 400;
+
+    threeRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(threeRenderer.domElement);
+
+    // Crear partículas flotantes doradas / cobrizas acorde a la paleta
+    const particleCount = 200;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 1000;
+      positions[i + 1] = (Math.random() - 0.5) * 1000;
+      positions[i + 2] = (Math.random() - 0.5) * 500;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    // Material de partículas suave y brillante
+    const material = new THREE.PointsMaterial({
+      color: 0xE5A853,
+      size: 4,
+      transparent: true,
+      opacity: 0.55,
+      blending: THREE.AdditiveBlending
+    });
+
+    particleMesh = new THREE.Points(geometry, material);
+    threeScene.add(particleMesh);
+
+    window.addEventListener('resize', onThreeWindowResize);
+    animateThree();
+  }
+
+  function onThreeWindowResize() {
+    if (!threeCamera || !threeRenderer) return;
+    threeCamera.aspect = window.innerWidth / window.innerHeight;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function animateThree() {
+    if (!particlesEnabled) {
+      requestAnimationFrame(animateThree);
+      return;
+    }
+    requestAnimationFrame(animateThree);
+    if (particleMesh) {
+      particleMesh.rotation.x += 0.0003;
+      particleMesh.rotation.y += 0.0005;
+    }
+    if (threeRenderer && threeScene && threeCamera) {
+      threeRenderer.render(threeScene, threeCamera);
+    }
+  }
+
+  function toggleThreeParticles(enabled) {
+    particlesEnabled = enabled;
+    const container = document.getElementById('bg-canvas-container');
+    if (container) container.style.display = enabled ? 'block' : 'none';
+  }
+
+  // Inicializar Three.js al cargar la página
+  window.addEventListener('DOMContentLoaded', initThreeBackground);
+
+  // ========== Definiciones de Audio (SOUND_DEFS) ==========
+  const SOUND_DEFS = {
+    classic: { cycle: 1.6, notes: [0, .16, .32, .48].map(e => ({ at: e, freq: 1760, dur: .09, type: 'square', gain: .22 })) },
+    beacon: { cycle: 1.4, notes: [0, .5].map(e => ({ at: e, freq: 660, to: 1320, dur: .38, type: 'sine', gain: .6 })) },
+    sunrise: { cycle: 2.6, notes: [523.25, 659.25, 783.99, 1046.5].map((e, a) => ({ at: a * .24, freq: e, dur: .7, type: 'triangle', gain: .4 })) },
+    digital: { cycle: 1.0, notes: [{ at: 0, freq: 1200, dur: .08, type: 'square', gain: .2 }, { at: .12, freq: 900, dur: .08, type: 'square', gain: .2 }, { at: .24, freq: 1200, dur: .08, type: 'square', gain: .2 }, { at: .36, freq: 900, dur: .08, type: 'square', gain: .2 }] },
+    chime: { cycle: 2.2, notes: [{ at: 0, freq: 784, dur: .5, type: 'sine', gain: .35 }, { at: .15, freq: 988, dur: .5, type: 'sine', gain: .3 }, { at: .3, freq: 1175, dur: .6, type: 'sine', gain: .28 }, { at: .5, freq: 1568, dur: .8, type: 'triangle', gain: .25 }] },
+    melody: { cycle: 2.4, notes: [{ at: 0, freq: 523.25, dur: .28, type: 'triangle', gain: .35 }, { at: .3, freq: 659.25, dur: .28, type: 'triangle', gain: .35 }, { at: .6, freq: 783.99, dur: .28, type: 'triangle', gain: .35 }, { at: .9, freq: 1046.5, dur: .5, type: 'triangle', gain: .4 }, { at: 1.5, freq: 783.99, dur: .4, type: 'triangle', gain: .3 }] }
+  };
+
+  // ========== Toast Announcer ==========
+  function showToast(message) {
+    const toast = document.getElementById('app-toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ========== Web Worker para Timer en Segundo Plano ==========
+  const workerCode = `
+    let timerId = null;
+    self.onmessage = function(e) {
+      if (e.data.action === 'start') {
+        if (timerId) clearInterval(timerId);
+        timerId = setInterval(() => self.postMessage('tick'), 250);
+      } else if (e.data.action === 'stop') {
+        if (timerId) clearInterval(timerId);
+        timerId = null;
+      }
+    };
+  `;
+  const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+  let backgroundWorker = null;
+  try {
+    backgroundWorker = new Worker(URL.createObjectURL(workerBlob));
+  } catch(e) {}
+
+  // ========== Wake Lock API ==========
+  let wakeLockSentinel = null;
+  let wakeLockRequested = true;
+
+  async function requestWakeLock() {
+    if (!wakeLockRequested || !('wakeLock' in navigator)) return;
+    try {
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+    } catch (err) {}
+  }
+
+  function releaseWakeLock() {
+    if (wakeLockSentinel) {
+      wakeLockSentinel.release().catch(() => {});
+      wakeLockSentinel = null;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (wakeLockSentinel !== null && document.visibilityState === 'visible' && running) {
+      requestWakeLock();
+    }
+  });
+
+  // ========== Notification API & Vibración ==========
+  let systemNotificationsEnabled = false;
+  let vibrationEnabled = true;
+
+  async function requestNotificationPermission() {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+    return false;
+  }
+
+  function sendSystemNotification() {
+    if (systemNotificationsEnabled && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+      new Notification('¡Temporizador finalizado!', {
+        body: 'El tiempo se ha agotado.',
+        icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="%23E5A853"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-2a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-8h4v2h-6V7h2v5z"/></svg>'
+      });
+    }
+  }
+
+  function triggerVibration() {
+    if (vibrationEnabled && 'vibrate' in navigator) {
+      try { navigator.vibrate([400, 200, 400, 200, 600]); } catch(e) {}
+    }
+  }
+
+  // ========== Flip Unit ==========
+  const FLIP_MS = { simple: 400, standard: 500, pro: 480 };
+  const LANDS_AT = { pro: 0.86 };
 
   function createFlipUnit(id) {
     const get = (part) => document.getElementById(`${id}-${part}`);
@@ -468,7 +872,7 @@ body.fullscreen-active main { padding-top: 0; }
     const flapTopText = get('flip-top-text'), flapBottomText = get('flip-bottom-text');
     const parts = [flapTop, flapBottom].filter(Boolean);
     let current = null;
-    let settleTimer = null;
+    let settleTimer = null, landTimer = null;
     let phase = 'flip-b';
 
     const clear = () => parts.forEach(el => el.classList.remove('flip-a', 'flip-b'));
@@ -477,12 +881,14 @@ body.fullscreen-active main { padding-top: 0; }
       const look = document.body.dataset.look || 'simple';
       const ms = FLIP_MS[look] || 400;
       clearTimeout(settleTimer);
+      clearTimeout(landTimer);
       clear();
       top.textContent = to;
       bottom.textContent = flapTopText.textContent = from;
       flapBottomText.textContent = to;
       phase = phase === 'flip-a' ? 'flip-b' : 'flip-a';
       parts.forEach(el => el.classList.add(phase));
+      if (LANDS_AT[look]) landTimer = setTimeout(() => { bottom.textContent = to; }, ms * LANDS_AT[look]);
       settleTimer = setTimeout(() => {
         bottom.textContent = to;
         clear();
@@ -497,28 +903,26 @@ body.fullscreen-active main { padding-top: 0; }
         current = value;
         if (previous === null || !animate || document.hidden) {
           clearTimeout(settleTimer);
+          clearTimeout(landTimer);
           clear();
           top.textContent = bottom.textContent = flapTopText.textContent = flapBottomText.textContent = value;
           return;
         }
         flip(previous, value);
-      }
+      },
+      reset() { current = null; },
+      get value() { return current; }
     };
   }
 
-  // Motor de Audio Offline Web Audio API
-  const SOUND_DEFS = {
-    classic: { cycle: 1.6, notes: [0, .16, .32, .48].map(e => ({ at: e, freq: 1760, dur: .09, type: 'square', gain: .22 })) },
-    beacon: { cycle: 1.4, notes: [0, .5].map(e => ({ at: e, freq: 660, to: 1320, dur: .38, type: 'sine', gain: .6 })) },
-    sunrise: { cycle: 2.6, notes: [523.25, 659.25, 783.99, 1046.5].map((e, a) => ({ at: a * .24, freq: e, dur: .7, type: 'triangle', gain: .4 })) },
-    digital: { cycle: 1.0, notes: [{at:0, freq:1200, dur:.08, type:'square', gain:.2}, {at:.12, freq:900, dur:.08, type:'square', gain:.2}] },
-    chime: { cycle: 2.2, notes: [{at:0, freq:784, dur:.5, type:'sine', gain:.35}, {at:.15, freq:988, dur:.5, type:'sine', gain:.3}] }
-  };
-
+  // ========== Synthesizer Audio Engine ==========
   let audioCtx = null;
   let currentPlayer = null;
+  let playGen = 0;
   const bufferCache = {};
   let currentSound = 'classic';
+  let volumeRampEnabled = false;
+  let uiSoundsEnabled = true;
 
   function getAudioCtx() {
     if (!audioCtx) {
@@ -534,7 +938,8 @@ body.fullscreen-active main { padding-top: 0; }
     const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     const ctx = getAudioCtx();
     if (!Offline || !ctx) return null;
-    const offline = new Offline(1, Math.ceil(def.cycle * ctx.sampleRate), ctx.sampleRate);
+    const sampleRate = ctx.sampleRate;
+    const offline = new Offline(1, Math.ceil(def.cycle * sampleRate), sampleRate);
 
     for (const note of def.notes) {
       const osc = offline.createOscillator();
@@ -542,9 +947,9 @@ body.fullscreen-active main { padding-top: 0; }
       osc.type = note.type || 'sine';
       osc.frequency.setValueAtTime(note.freq, note.at);
       if (note.to) osc.frequency.exponentialRampToValueAtTime(note.to, note.at + note.dur);
-      gain.gain.setValueAtTime(1e-4, note.at);
+      gain.gain.setValueAtTime(0.0001, note.at);
       gain.gain.linearRampToValueAtTime(note.gain, note.at + 0.012);
-      gain.gain.exponentialRampToValueAtTime(1e-4, note.at + note.dur);
+      gain.gain.exponentialRampToValueAtTime(0.0001, note.at + note.dur);
       osc.connect(gain).connect(offline.destination);
       osc.start(note.at);
       osc.stop(note.at + note.dur + 0.02);
@@ -556,28 +961,40 @@ body.fullscreen-active main { padding-top: 0; }
     if (bufferCache[name]) return bufferCache[name];
     const def = SOUND_DEFS[name];
     if (!def) return null;
-    try { bufferCache[name] = await renderPattern(def); } catch(e) {}
+    try { bufferCache[name] = await renderPattern(def); } catch (e) {}
     return bufferCache[name] || null;
   }
 
   function stopSound() {
+    playGen++;
     if (currentPlayer) {
       try { currentPlayer.stop(); } catch {}
       currentPlayer = null;
     }
   }
 
-  async function playSound({ sound = currentSound, volume = 0.8, loop = false, preview = false } = {}) {
+  async function playSound({ sound = currentSound, volume = 0.8, loop = false, preview = false, ramp = false } = {}) {
     stopSound();
+    const gen = playGen;
     const ctx = getAudioCtx();
-    if (!ctx) return;
-    if (ctx.state !== 'running') await ctx.resume().catch(() => {});
+    if (!ctx) return null;
+
+    if (ctx.state !== 'running') {
+      await Promise.race([ctx.resume().catch(() => {}), new Promise(r => setTimeout(r, 250))]);
+    }
+
     const buffer = await getBuffer(sound);
-    if (!buffer) return;
+    if (gen !== playGen || !buffer) return null;
 
     const now = ctx.currentTime;
     const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(volume, now);
+    
+    if (ramp && !preview) {
+      gainNode.gain.setValueAtTime(0.05, now);
+      gainNode.gain.linearRampToValueAtTime(volume, now + 8);
+    } else {
+      gainNode.gain.setValueAtTime(volume, now);
+    }
     gainNode.connect(ctx.destination);
 
     const source = ctx.createBufferSource();
@@ -586,14 +1003,96 @@ body.fullscreen-active main { padding-top: 0; }
     source.connect(gainNode);
     source.start(now);
 
-    const duration = preview ? 2 : (loop ? 600 : 6);
+    const duration = preview ? (SOUND_DEFS[sound]?.cycle || 2) * 2 : (loop ? 900 : (SOUND_DEFS[sound]?.cycle || 2) * 3);
     source.stop(now + duration);
-    currentPlayer = { stop() { try { source.stop(); } catch {} } };
+
+    const player = {
+      stop() {
+        try {
+          gainNode.gain.cancelScheduledValues(ctx.currentTime);
+          gainNode.gain.setTargetAtTime(0, ctx.currentTime, 0.03);
+          source.stop(ctx.currentTime + 0.15);
+        } catch {}
+      }
+    };
+    source.onended = () => { if (currentPlayer === player) currentPlayer = null; };
+    currentPlayer = player;
+    return player;
   }
 
-  document.addEventListener('pointerdown', () => getAudioCtx(), { once: true });
+  function playUISound() {
+    if (!uiSoundsEnabled) return;
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.03);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.035);
+    } catch(e) {}
+  }
 
-  // Control Temporizador
+  function unlockAudio() {
+    getAudioCtx();
+    if (currentSound) getBuffer(currentSound);
+  }
+  document.addEventListener('pointerdown', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  // ========== Sonido Tictac por Segundo ==========
+  let tickEnabled = false;
+  let tickType = 'card';
+  let lastTickSecond = null;
+
+  function playTickSound(type = tickType) {
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'card') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.04);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.004);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      } else if (type === 'tick') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1400, now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.12, now + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } else {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.03);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      }
+    } catch (e) {}
+  }
+
+  // ========== Estado y Lógica del Temporizador ==========
   const hoursUnit = createFlipUnit('timer-hours');
   const minutesUnit = createFlipUnit('timer-minutes');
   const secondsUnit = createFlipUnit('timer-seconds');
@@ -606,7 +1105,11 @@ body.fullscreen-active main { padding-top: 0; }
   let rafId = null;
   let soundEnabled = true;
   let soundVolume = 0.8;
+  let soundRepeat = true;
+  let lastAnnouncedMinute = null;
+  let showHours = true;
 
+  const progressBarContainer = document.getElementById('timer-progress-container');
   const progressBar = document.getElementById('timer-progress-bar');
   const display = document.getElementById('timer-display');
   const startBtn = document.getElementById('timer-start-pause-btn');
@@ -616,31 +1119,65 @@ body.fullscreen-active main { padding-top: 0; }
   const secondsInput = document.getElementById('timer-seconds-input');
   const ringOverlay = document.getElementById('ring-overlay');
   const ringTime = document.getElementById('ring-time');
+  const ringLabel = document.getElementById('ring-label');
+  const srAnnouncer = document.getElementById('sr-announcer');
 
   function pad(n) { return String(n).padStart(2, '0'); }
+
+  function announceTime(secs) {
+    if (!srAnnouncer) return;
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (secs <= 10 && secs > 0) {
+      srAnnouncer.textContent = `${secs} segundos restantes`;
+    } else if (s === 0 && m !== lastAnnouncedMinute) {
+      lastAnnouncedMinute = m;
+      let text = 'Quedan ';
+      if (h > 0) text += `${h} horas `;
+      if (m > 0) text += `${m} minutos`;
+      srAnnouncer.textContent = text;
+    }
+  }
 
   function updateDisplay(secs, animate = true) {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
+
+    if (running && tickEnabled && animate && s !== lastTickSecond && secs > 0) {
+      playTickSound(tickType);
+      lastTickSecond = s;
+    }
+
     hoursUnit.set(pad(h), animate);
     minutesUnit.set(pad(m), animate);
     secondsUnit.set(pad(s), animate);
+
     if (progressBar && totalSeconds > 0) {
       const pct = 1 - (secs / totalSeconds);
       progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, pct))})`;
     }
+    
+    if (progressBarContainer) {
+      progressBarContainer.classList.toggle('is-warning', running && secs <= 10 && secs > 0);
+    }
+
+    if (running) announceTime(secs);
   }
 
   function setTimeFromInputs() {
-    const h = Math.max(0, Math.min(99, parseInt(hoursInput.value) || 0));
-    const m = Math.max(0, Math.min(59, parseInt(minutesInput.value) || 0));
-    const s = Math.max(0, Math.min(59, parseInt(secondsInput.value) || 0));
+    const h = Math.max(0, Math.min(99, parseInt(hoursInput.value, 10) || 0));
+    const m = Math.max(0, Math.min(59, parseInt(minutesInput.value, 10) || 0));
+    const s = Math.max(0, Math.min(59, parseInt(secondsInput.value, 10) || 0));
     totalSeconds = h * 3600 + m * 60 + s;
     remaining = totalSeconds;
+    hoursInput.value = h;
+    minutesInput.value = m;
+    secondsInput.value = s;
     updateDisplay(remaining, false);
     document.querySelectorAll('.preset-button').forEach(b => {
-      b.classList.toggle('active', parseInt(b.dataset.seconds) === totalSeconds);
+      b.classList.toggle('active', parseInt(b.dataset.seconds, 10) === totalSeconds);
     });
   }
 
@@ -650,9 +1187,11 @@ body.fullscreen-active main { padding-top: 0; }
     });
     const icon = document.getElementById('start-icon');
     if (icon) {
-      icon.innerHTML = state === 'pause' 
-        ? '<path d="M534-220v-520h206v520zm-314 0v-520h207v520zm359-45h116v-430H579zm-314 0h116v-430H265z"/>'
-        : '<path d="M340-238v-488l383 244zm45-83 254-161-254-161z"/>';
+      if (state === 'pause') {
+        icon.innerHTML = '<path d="M534-220v-520h206v520zm-314 0v-520h207v520zm359-45h116v-430H579zm-314 0h116v-430H265z"/>';
+      } else {
+        icon.innerHTML = '<path d="M340-238v-488l383 244zm45-83 254-161-254-161z"/>';
+      }
     }
   }
 
@@ -667,40 +1206,61 @@ body.fullscreen-active main { padding-top: 0; }
     rafId = requestAnimationFrame(tick);
   }
 
+  if (backgroundWorker) {
+    backgroundWorker.onmessage = function() { if (running) tick(); };
+  }
+
   function start() {
+    playUISound();
     if (remaining <= 0) setTimeFromInputs();
     if (remaining <= 0) return;
     running = true;
     paused = false;
+    lastTickSecond = null;
+    lastAnnouncedMinute = null;
     endTime = Date.now() + remaining * 1000;
     document.body.classList.add('timer-running');
     setButtonState('pause');
     [hoursInput, minutesInput, secondsInput].forEach(i => i.disabled = true);
     document.querySelectorAll('.preset-button').forEach(b => b.disabled = true);
+    
+    requestWakeLock();
+    if (backgroundWorker) backgroundWorker.postMessage({ action: 'start' });
     rafId = requestAnimationFrame(tick);
   }
 
   function pause() {
+    playUISound();
     running = false;
     paused = true;
     if (rafId) cancelAnimationFrame(rafId);
+    if (backgroundWorker) backgroundWorker.postMessage({ action: 'stop' });
+    releaseWakeLock();
     remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
     setButtonState('resume');
   }
 
   function resume() {
+    playUISound();
     if (remaining <= 0) return;
     running = true;
     paused = false;
     endTime = Date.now() + remaining * 1000;
     setButtonState('pause');
+    requestWakeLock();
+    if (backgroundWorker) backgroundWorker.postMessage({ action: 'start' });
     rafId = requestAnimationFrame(tick);
   }
 
   function reset() {
+    playUISound();
     running = false;
     paused = false;
+    lastTickSecond = null;
+    lastAnnouncedMinute = null;
     if (rafId) cancelAnimationFrame(rafId);
+    if (backgroundWorker) backgroundWorker.postMessage({ action: 'stop' });
+    releaseWakeLock();
     stopSound();
     remaining = totalSeconds;
     updateDisplay(remaining, false);
@@ -709,15 +1269,18 @@ body.fullscreen-active main { padding-top: 0; }
     setButtonState('start');
     [hoursInput, minutesInput, secondsInput].forEach(i => i.disabled = false);
     document.querySelectorAll('.preset-button').forEach(b => b.disabled = false);
-    progressBar.style.transform = 'scaleX(0)';
+    if (progressBar) progressBar.style.transform = 'scaleX(0)';
   }
 
   function finish() {
     running = false;
     if (rafId) cancelAnimationFrame(rafId);
+    if (backgroundWorker) backgroundWorker.postMessage({ action: 'stop' });
+    releaseWakeLock();
     remaining = 0;
     updateDisplay(0, true);
     document.body.classList.remove('timer-running');
+    display.classList.add('is-finished');
     setButtonState('start');
     [hoursInput, minutesInput, secondsInput].forEach(i => i.disabled = false);
     document.querySelectorAll('.preset-button').forEach(b => b.disabled = false);
@@ -726,33 +1289,48 @@ body.fullscreen-active main { padding-top: 0; }
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
     ringTime.textContent = h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    ringLabel.textContent = '¡Se acabó el tiempo!';
+    
     ringOverlay.hidden = false;
     requestAnimationFrame(() => ringOverlay.classList.add('visible'));
 
-    if (soundEnabled) playSound({ sound: currentSound, volume: soundVolume, loop: true });
+    if (soundEnabled) {
+      playSound({ sound: currentSound, volume: soundVolume, loop: soundRepeat, ramp: volumeRampEnabled });
+    }
+    
+    triggerVibration();
+    sendSystemNotification();
   }
 
   function closeRing() {
+    playUISound();
     stopSound();
     ringOverlay.classList.remove('visible');
     setTimeout(() => { ringOverlay.hidden = true; }, 300);
+    display.classList.remove('is-finished');
   }
 
+  // ========== Event Listeners de Controles ==========
   startBtn.addEventListener('click', () => {
     if (!running && !paused) start();
     else if (running) pause();
     else resume();
   });
+
   resetBtn.addEventListener('click', reset);
 
   document.querySelectorAll('.preset-button').forEach(btn => {
     btn.addEventListener('click', () => {
       if (running) return;
-      const secs = parseInt(btn.dataset.seconds);
+      playUISound();
+      const secs = parseInt(btn.dataset.seconds, 10);
       totalSeconds = remaining = secs;
-      hoursInput.value = Math.floor(secs / 3600);
-      minutesInput.value = Math.floor((secs % 3600) / 60);
-      secondsInput.value = secs % 60;
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      hoursInput.value = h;
+      minutesInput.value = m;
+      secondsInput.value = s;
       updateDisplay(secs, false);
       document.querySelectorAll('.preset-button').forEach(b => b.classList.toggle('active', b === btn));
     });
@@ -764,74 +1342,315 @@ body.fullscreen-active main { padding-top: 0; }
   });
 
   document.getElementById('ring-ok').addEventListener('click', closeRing);
-  document.getElementById('ring-secondary').addEventListener('click', () => { closeRing(); reset(); });
+  document.getElementById('ring-secondary').addEventListener('click', () => {
+    closeRing();
+    reset();
+  });
 
-  // Configuración Sheet & UI
+  // ========== Panel de Configuración & Opciones ==========
   const settingsPanel = document.getElementById('settings-panel');
   const settingsScrim = document.getElementById('settings-scrim');
+  let settingsOpen = false;
 
   function setSettingsOpen(open) {
+    playUISound();
+    settingsOpen = open;
     settingsPanel.classList.toggle('open', open);
     settingsPanel.inert = !open;
     document.body.classList.toggle('settings-open', open);
     document.body.classList.toggle('popup-active', open);
+    document.getElementById('settings-toggle').setAttribute('aria-expanded', open);
   }
 
-  document.getElementById('settings-toggle').addEventListener('click', () => setSettingsOpen(true));
+  document.getElementById('settings-toggle').addEventListener('click', () => setSettingsOpen(!settingsOpen));
   document.getElementById('close-settings').addEventListener('click', () => setSettingsOpen(false));
   settingsScrim.addEventListener('click', () => setSettingsOpen(false));
 
-  document.querySelectorAll('.look-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      const look = opt.dataset.look;
-      document.body.dataset.look = look;
-      document.querySelectorAll('.look-option').forEach(o => o.setAttribute('aria-checked', o.dataset.look === look));
+  function applyLook(look) {
+    document.body.dataset.look = look;
+    document.querySelectorAll('.look-option').forEach(opt => {
+      opt.setAttribute('aria-checked', opt.dataset.look === look);
     });
+    try { localStorage.setItem('offlineTimerLook', look); } catch(e) {}
+  }
+  document.querySelectorAll('.look-option').forEach(opt => {
+    opt.addEventListener('click', () => applyLook(opt.dataset.look));
   });
+
+  // Three.js Particles Toggle
+  const threeParticlesToggle = document.getElementById('threejs-particles-toggle');
+  threeParticlesToggle.addEventListener('change', () => {
+    toggleThreeParticles(threeParticlesToggle.checked);
+    try { localStorage.setItem('offlineTimerThreeParticles', threeParticlesToggle.checked); } catch(e) {}
+  });
+
+  // Escala y Disposición
+  const scaleRange = document.getElementById('scale-range');
+  const scaleValue = document.getElementById('scale-value');
+  const layoutSelect = document.getElementById('layout-select');
+  const showHoursToggle = document.getElementById('show-hours-toggle');
+
+  function applyScale(val) {
+    document.documentElement.style.setProperty('--display-scale', val / 100);
+    scaleValue.textContent = `${val}%`;
+    try { localStorage.setItem('offlineTimerScale', val); } catch(e) {}
+  }
+
+  scaleRange.addEventListener('input', () => applyScale(scaleRange.value));
+
+  layoutSelect.addEventListener('change', () => {
+    const val = layoutSelect.value;
+    if (val === 'auto') delete document.body.dataset.layout;
+    else document.body.dataset.layout = val;
+    try { localStorage.setItem('offlineTimerLayout', val); } catch(e) {}
+  });
+
+  function toggleHoursVisibility(visible) {
+    showHours = visible;
+    const hoursCard = document.getElementById('timer-hours-card');
+    const hoursColon = document.getElementById('timer-hours-colon');
+    if (hoursCard) hoursCard.style.display = visible ? '' : 'none';
+    if (hoursColon) hoursColon.style.display = visible ? '' : 'none';
+    try { localStorage.setItem('offlineTimerShowHours', visible); } catch(e) {}
+  }
+
+  showHoursToggle.addEventListener('change', () => toggleHoursVisibility(showHoursToggle.checked));
+
+  // Sonidos e Interfaz
+  const tickToggle = document.getElementById('tick-sound-toggle');
+  const tickSelect = document.getElementById('tick-sound-select');
+  tickToggle.addEventListener('change', () => {
+    tickEnabled = tickToggle.checked;
+    try { localStorage.setItem('offlineTimerTick', tickEnabled); } catch(e) {}
+  });
+  tickSelect.addEventListener('change', () => {
+    tickType = tickSelect.value;
+    try { localStorage.setItem('offlineTimerTickType', tickType); } catch(e) {}
+  });
+  document.getElementById('tick-test-sound').addEventListener('click', () => playTickSound(tickType));
 
   const soundToggle = document.getElementById('timer-sound-toggle');
   const soundSelect = document.getElementById('timer-sound-select');
   const volumeSlider = document.getElementById('timer-volume');
   const volumeValue = document.getElementById('timer-volume-value');
+  const volumeRampToggle = document.getElementById('volume-ramp-toggle');
+  const repeatToggle = document.getElementById('timer-repeat-toggle');
+  const uiSoundToggle = document.getElementById('ui-sound-toggle');
+  const vibrationToggle = document.getElementById('vibration-toggle');
+  const systemNotifToggle = document.getElementById('system-notification-toggle');
+  const wakeLockToggle = document.getElementById('wake-lock-toggle');
 
   function paintRange(range) {
     const pct = ((range.value - range.min) / (range.max - range.min)) * 100;
     range.style.setProperty('--fill-pct', pct + '%');
   }
 
-  soundToggle.addEventListener('change', () => { soundEnabled = soundToggle.checked; });
-  soundSelect.addEventListener('change', () => { currentSound = soundSelect.value; });
+  soundToggle.addEventListener('change', () => {
+    soundEnabled = soundToggle.checked;
+    try { localStorage.setItem('offlineTimerSound', soundEnabled); } catch(e) {}
+  });
+  soundSelect.addEventListener('change', () => {
+    currentSound = soundSelect.value;
+    try { localStorage.setItem('offlineTimerSoundType', currentSound); } catch(e) {}
+  });
   volumeSlider.addEventListener('input', () => {
     soundVolume = volumeSlider.value / 100;
     volumeValue.textContent = volumeSlider.value + '%';
     paintRange(volumeSlider);
   });
-  document.getElementById('timer-test-sound').addEventListener('click', () => playSound({ sound: currentSound, volume: soundVolume, preview: true }));
-
-  // Pantalla Completa
-  const fsBtn = document.getElementById('fullscreen-btn');
-  fsBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen();
-    }
+  volumeSlider.addEventListener('change', () => {
+    try { localStorage.setItem('offlineTimerVolume', volumeSlider.value); } catch(e) {}
   });
+  volumeRampToggle.addEventListener('change', () => {
+    volumeRampEnabled = volumeRampToggle.checked;
+    try { localStorage.setItem('offlineTimerVolumeRamp', volumeRampEnabled); } catch(e) {}
+  });
+  repeatToggle.addEventListener('change', () => {
+    soundRepeat = repeatToggle.checked;
+    try { localStorage.setItem('offlineTimerRepeat', soundRepeat); } catch(e) {}
+  });
+  uiSoundToggle.addEventListener('change', () => {
+    uiSoundsEnabled = uiSoundToggle.checked;
+    try { localStorage.setItem('offlineTimerUISounds', uiSoundsEnabled); } catch(e) {}
+  });
+  vibrationToggle.addEventListener('change', () => {
+    vibrationEnabled = vibrationToggle.checked;
+    try { localStorage.setItem('offlineTimerVibration', vibrationEnabled); } catch(e) {}
+  });
+
+  document.getElementById('timer-test-sound').addEventListener('click', () => {
+    playSound({ sound: currentSound, volume: soundVolume, preview: true, ramp: volumeRampToggle.checked });
+  });
+
+  systemNotifToggle.addEventListener('change', async () => {
+    if (systemNotifToggle.checked) {
+      const granted = await requestNotificationPermission();
+      systemNotificationsEnabled = granted;
+      systemNotifToggle.checked = granted;
+    } else {
+      systemNotificationsEnabled = false;
+    }
+    try { localStorage.setItem('offlineTimerSysNotif', systemNotificationsEnabled); } catch(e) {}
+  });
+
+  wakeLockToggle.addEventListener('change', () => {
+    wakeLockRequested = wakeLockToggle.checked;
+    if (!wakeLockRequested) releaseWakeLock();
+    else if (running) requestWakeLock();
+    try { localStorage.setItem('offlineTimerWakeLock', wakeLockRequested); } catch(e) {}
+  });
+
+  // Exportar / Importar Configuración
+  document.getElementById('export-config-btn').addEventListener('click', () => {
+    const config = {
+      look: document.body.dataset.look || 'simple',
+      scale: scaleRange.value,
+      layout: layoutSelect.value,
+      showHours: showHoursToggle.checked,
+      threeParticles: threeParticlesToggle.checked,
+      tickEnabled, tickType,
+      soundEnabled, currentSound,
+      volume: volumeSlider.value,
+      volumeRampEnabled, soundRepeat,
+      uiSoundsEnabled, vibrationEnabled,
+      systemNotificationsEnabled, wakeLockRequested
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'temporizador-config.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Configuración exportada correctamente');
+  });
+
+  const importFileInput = document.getElementById('import-config-file');
+  document.getElementById('import-config-btn').addEventListener('click', () => importFileInput.click());
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const cfg = JSON.parse(event.target.result);
+        if (cfg.look) applyLook(cfg.look);
+        if (cfg.scale) { scaleRange.value = cfg.scale; applyScale(cfg.scale); }
+        if (cfg.layout) { layoutSelect.value = cfg.layout; layoutSelect.dispatchEvent(new Event('change')); }
+        if (cfg.showHours !== undefined) { showHoursToggle.checked = cfg.showHours; toggleHoursVisibility(cfg.showHours); }
+        if (cfg.threeParticles !== undefined) { threeParticlesToggle.checked = cfg.threeParticles; toggleThreeParticles(cfg.threeParticles); }
+        if (cfg.tickEnabled !== undefined) { tickEnabled = cfg.tickEnabled; tickToggle.checked = tickEnabled; }
+        if (cfg.tickType) { tickType = cfg.tickType; tickSelect.value = tickType; }
+        if (cfg.soundEnabled !== undefined) { soundEnabled = cfg.soundEnabled; soundToggle.checked = soundEnabled; }
+        if (cfg.currentSound) { currentSound = cfg.currentSound; soundSelect.value = currentSound; }
+        if (cfg.volume) { volumeSlider.value = cfg.volume; soundVolume = cfg.volume / 100; volumeValue.textContent = `${cfg.volume}%`; }
+        if (cfg.volumeRampEnabled !== undefined) { volumeRampEnabled = cfg.volumeRampEnabled; volumeRampToggle.checked = volumeRampEnabled; }
+        if (cfg.soundRepeat !== undefined) { soundRepeat = cfg.soundRepeat; repeatToggle.checked = soundRepeat; }
+        if (cfg.uiSoundsEnabled !== undefined) { uiSoundsEnabled = cfg.uiSoundsEnabled; uiSoundToggle.checked = uiSoundsEnabled; }
+        if (cfg.vibrationEnabled !== undefined) { vibrationEnabled = cfg.vibrationEnabled; vibrationToggle.checked = cfg.vibrationEnabled; }
+        showToast('Configuración importada con éxito');
+      } catch(err) {
+        showToast('Error al importar el archivo JSON');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Pantalla Completa & Gestos Touch
+  const fsBtn = document.getElementById('fullscreen-btn');
+  async function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+      } catch (e) {}
+    } else {
+      document.exitFullscreen().catch(() => {});
+      if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    }
+  }
+  fsBtn.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', () => {
     document.body.classList.toggle('fullscreen-active', !!document.fullscreenElement);
   });
 
+  // Gestos Touch (Swipe)
+  let touchStartY = 0;
+  document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffY = touchStartY - touchEndY;
+    if (diffY > 90) toggleFullscreen(); // Swipe Up -> Fullscreen
+    else if (diffY < -90) setSettingsOpen(true); // Swipe Down -> Settings
+  }, { passive: true });
+
+  // Keyboard Shortcuts
+  document.addEventListener('keydown', e => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    const key = e.key.toLowerCase();
+    if (key === 'escape') setSettingsOpen(false);
+    else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); startBtn.click(); }
+    else if (key === 'r') { e.preventDefault(); reset(); }
+    else if (key === 'f') { e.preventDefault(); toggleFullscreen(); }
+    else if (key === 's' || e.key === ',') { e.preventDefault(); setSettingsOpen(!settingsOpen); }
+  });
+
+  // Reset Ajustes por Defecto
+  document.getElementById('reset-settings').addEventListener('click', () => {
+    applyLook('simple');
+    applyScale(100); scaleRange.value = 100;
+    layoutSelect.value = 'auto'; delete document.body.dataset.layout;
+    showHoursToggle.checked = true; toggleHoursVisibility(true);
+    threeParticlesToggle.checked = true; toggleThreeParticles(true);
+    tickToggle.checked = false; tickEnabled = false;
+    tickType = 'card'; tickSelect.value = 'card';
+    soundToggle.checked = true; soundEnabled = true;
+    currentSound = 'classic'; soundSelect.value = 'classic';
+    volumeSlider.value = 80; soundVolume = 0.8; volumeValue.textContent = '80%'; paintRange(volumeSlider);
+    volumeRampToggle.checked = false; volumeRampEnabled = false;
+    repeatToggle.checked = true; soundRepeat = true;
+    uiSoundToggle.checked = true; uiSoundsEnabled = true;
+    vibrationToggle.checked = true; vibrationEnabled = true;
+    systemNotifToggle.checked = false; systemNotificationsEnabled = false;
+    wakeLockToggle.checked = true; wakeLockRequested = true;
+    showToast('Ajustes restablecidos');
+  });
+
+  // Cargar Preferencias Guardadas
+  try {
+    const l = localStorage.getItem('offlineTimerLook');
+    if (l) applyLook(l);
+    const sc = localStorage.getItem('offlineTimerScale');
+    if (sc) { scaleRange.value = sc; applyScale(sc); }
+    const ly = localStorage.getItem('offlineTimerLayout');
+    if (ly) { layoutSelect.value = ly; if (ly !== 'auto') document.body.dataset.layout = ly; }
+    const sh = localStorage.getItem('offlineTimerShowHours');
+    if (sh !== null) { showHoursToggle.checked = sh === 'true'; toggleHoursVisibility(sh === 'true'); }
+    const tp = localStorage.getItem('offlineTimerThreeParticles');
+    if (tp !== null) { threeParticlesToggle.checked = tp === 'true'; toggleThreeParticles(tp === 'true'); }
+    const tk = localStorage.getItem('offlineTimerTick');
+    if (tk !== null) { tickEnabled = tk === 'true'; tickToggle.checked = tickEnabled; }
+    const tkt = localStorage.getItem('offlineTimerTickType');
+    if (tkt && ['card','tick','click'].includes(tkt)) { tickType = tkt; tickSelect.value = tkt; }
+    const s = localStorage.getItem('offlineTimerSound');
+    if (s !== null) { soundEnabled = s === 'true'; soundToggle.checked = soundEnabled; }
+    const st = localStorage.getItem('offlineTimerSoundType');
+    if (st && SOUND_DEFS[st]) { currentSound = st; soundSelect.value = st; }
+    const v = localStorage.getItem('offlineTimerVolume');
+    if (v) { volumeSlider.value = v; soundVolume = v/100; volumeValue.textContent = `${v}%`; }
+    const vr = localStorage.getItem('offlineTimerVolumeRamp');
+    if (vr !== null) { volumeRampEnabled = vr === 'true'; volumeRampToggle.checked = volumeRampEnabled; }
+    const r = localStorage.getItem('offlineTimerRepeat');
+    if (r !== null) { soundRepeat = r === 'true'; repeatToggle.checked = soundRepeat; }
+    const ui = localStorage.getItem('offlineTimerUISounds');
+    if (ui !== null) { uiSoundsEnabled = ui === 'true'; uiSoundToggle.checked = uiSoundsEnabled; }
+    const vb = localStorage.getItem('offlineTimerVibration');
+    if (vb !== null) { vibrationEnabled = vb === 'true'; vibrationToggle.checked = vb === 'true'; }
+  } catch(e) {}
+
   paintRange(volumeSlider);
   updateDisplay(remaining, false);
-  document.querySelector('.preset-button[data-seconds="300"]')?.classList.add('active');
 })();
-
-// Registro del Service Worker (offline)
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then((reg) => console.log('SW registrado:', reg.scope))
-    .catch((err) => console.error('SW falló:', err));
-}
 </script>
 </body>
 </html>
